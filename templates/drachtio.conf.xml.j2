@@ -1,70 +1,75 @@
 <drachtio>
 
-    <!-- udp port to listen on for client connections and shared secret used to authenticate clients -->
-    <admin port="{{drachtioAdminPort}}" secret="{{drachtioSecret}}">0.0.0.0</admin>
+  <!-- Admin interface: port + secret -->
+  <admin port="{{ drachtioAdminPort | default(9022) }}" secret="{{ drachtioSecret | default('changeme') }}">
+    {{ drachtioAdminInterface | default('0.0.0.0') }}
+  </admin>
 
-<!--
-    <request-handlers>
-       <request-handler sip-method="*" http-method="GET">{{ drachtioHttpHandler }}</request-handler>
-    </request-handlers>
--->
+  <!-- Optional HTTP request handlers -->
+  {% if drachtioHttpHandler is defined and drachtioHttpHandler %}
+  <request-handlers>
+    <request-handler sip-method="*" http-method="GET">{{ drachtioHttpHandler }}</request-handler>
+  </request-handlers>
+  {% endif %}
 
-    <!-- sip configuration -->
-    <sip>
-        <contacts>
-            <contact>sip:{{ ansible_default_ipv4.address }};transport=udp,tcp</contact>
-        </contacts>
+  <!-- SIP configuration -->
+  <sip>
+    <contacts>
+      <contact>sip:{{ ansible_default_ipv4.address }};transport=udp,tcp</contact>
+    </contacts>
 
+    <!-- Block known SIP scanners -->
+    <spammers action="reject" tcp-action="discard">
+      <header name="User-Agent">
+        <value>sip-cli</value>
+        <value>sipcli</value>
+        <value>friendly-scanner</value>
+      </header>
+      <header>
+        <value>sipvicious</value>
+      </header>
+    </spammers>
 
-        <spammers action="reject" tcp-action="discard">
-            <header name="User-Agent">
-                <value>sip-cli</value>
-                <value>sipcli</value>
-                <value>friendly-scanner</value>
-            </header>
-            <header>
-                <value>sipvicious</value>
-            </header>
-        </spammers>
+    <udp-mtu>4096</udp-mtu>
 
-        <udp-mtu>4096</udp-mtu>
+    <!-- TLS (disabled by default; enable if certs exist) -->
+    {% if enable_tls | default(false) %}
+    <tls>
+      <key-file>/etc/letsencrypt/live/{{ tls_domain }}/privkey.pem</key-file>
+      <cert-file>/etc/letsencrypt/live/{{ tls_domain }}/cert.pem</cert-file>
+      <chain-file>/etc/letsencrypt/live/{{ tls_domain }}/chain.pem</chain-file>
+      <dh-param>/var/local/dh4096.pem</dh-param>
+    </tls>
+    {% endif %}
+  </sip>
 
-        <!-- if you want to terminate SIP over TLS connections (example shows letsencrypt.org typical file locations, but use any CA)
-        <tls>
-                <key-file>/etc/letsencrypt/live/yourdomain/privkey.pem</key-file>
-                <cert-file>/etc/letsencrypt/live/yourdomain/cert.pem</cert-file>
-                <chain-file>/etc/letsencrypt/live/yourdomain/chain.pem</chain-file>
-                <dh-param>/var/local/dh4096.pem</dh-param>
-        </tls>
-        -->
+  <!-- Enable CDR logging -->
+  <cdrs>true</cdrs>
 
-    </sip>
+  <!-- Optional monitoring (Prometheus) -->
+  {% if enable_prometheus | default(false) %}
+  <monitoring>
+    <prometheus port="{{ prometheus_port | default(8088) }}">127.0.0.1</prometheus>
+  </monitoring>
+  {% endif %}
 
-    <cdrs>true</cdrs>
+  <!-- Logging configuration -->
+  <logging>
+    <file>
+      <name>{{ drachtioLogFileDirectory }}/{{ drachtioLogFilePattern }}</name>
+      <archive>{{ drachtioLogArchiveDirectory }}</archive>
+      <size>{{ drachtioLogFileSize }}</size>
+      <maxSize>{{ drachtioLogFileMaxSize }}</maxSize>
+      <maxFiles>30</maxFiles>
+      <auto-flush>true</auto-flush>
+    </file>
 
-<!--
-    <monitoring>
-        <prometheus port="8088">127.0.0.1</prometheus>
-    </monitoring>
--->
+    <!-- Sofia internal log level, from 0 (minimal) to 9 (verbose) -->
+    <sofia-loglevel>3</sofia-loglevel>
 
-    <!-- logging configuration -->
-    <logging>
+    <!-- notice, warning, error, info, debug (default: info) -->
+    <loglevel>{{ drachtioLogLevel | default('info') }}</loglevel>
+  </logging>
 
-        <file>
-            <name>{{drachtioLogFileDirectory}}/{{drachtioLogFilePattern}}</name>
-            <archive>{{drachtioLogArchiveDirectory}}</archive>
-            <size>{{drachtioLogFileSize}}</size>
-            <maxSize>{{drachtioLogFileMaxSize}}</maxSize>
-            <maxFiles>30</maxFiles>
-            <auto-flush>true</auto-flush>
-        </file>
-
-        <!-- sofia internal log level, from 0 (minimal) to 9 (verbose) -->
-        <sofia-loglevel>3</sofia-loglevel>
-        
-        <!-- notice, warning, error, info, debug.  Default: info -->
-        <loglevel>info</loglevel>
-    </logging>
-        
 </drachtio>
+

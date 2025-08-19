@@ -1,14 +1,23 @@
 ---
-drachtioAdminPort: 9022
-drachtioSecret: cymru
-drachtioSipInterface: eth0
-drachtioAdminInterface: eth0
-drachtioLogFilePattern: drachtio.log
+# Drachtio build configuration
+drachtioBranch: v0.8.8        # Git branch/tag of drachtio-server to build
+remove_source: false          # Whether to remove the source after build
+
+# Admin & SIP configuration
+drachtioAdminPort: 9022       # Port for drachtio admin interface
+drachtioSecret: cymru         # Admin secret
+drachtioSipInterface: eth0    # Network interface for SIP traffic
+drachtioAdminInterface: eth0  # Network interface for admin control
+
+# Logging configuration
+drachtioLogFilePattern: drachtio.log          # Log filename pattern
+drachtioLogFileDirectory: /var/log/drachtio   # Log directory
 drachtioLogArchiveDirectory: /var/log/drachtio/archive
-drachtioLogFileSize: 30
-drachtioLogFileMaxSize: 1000
-drachtioLogFileDirectory: /var/log/drachtio
+drachtioLogFileSize: 30       # Rotation size in MB
+drachtioLogFileMaxSize: 1000  # Max log size in MB before archive
+
+# HTTP handler (if used)
 drachtioHttpHandler: 127.0.0.1:3000
-drachtioBranch: v0.8.8
-cloud_provider: none
-remove_source: false
+
+# Cloud provider (optional, e.g. aws, gcp, azure, none)
+cloud_provider: aws
